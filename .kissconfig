@@ -1,0 +1,10 @@
+# lemon configuration — tuned for lemon's own codebase
+# Click CLI entrypoints inherently use many decorators and positional args.
+
+[thresholds]
+annotations_per_function = 9
+arguments_positional = 8
+
+[gate]
+test_coverage_threshold = 0
+min_similarity = 0.90
