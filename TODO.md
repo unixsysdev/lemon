@@ -8,11 +8,10 @@
 
 ## Performance
 
-- [ ] **MinHash/LSH duplication** — replace SequenceMatcher (O(n²)) with MinHash+LSH for large codebases (>2000 files)
 - [ ] **Incremental caching** — cache parse trees and metrics to avoid re-analyzing unchanged files
 
 ## Polish
 
-- [ ] **`stats --all` without `=`** — `--all 5` eats the path argument; currently requires `--all=5`
-- [ ] **Graph edges** — dependency graph shows 0 edges on lemon's own code (import resolution needs work)
+- [x] **`stats --all` without `=`** — split into `--all` (flag=10) + `--top N`
+- [x] **Graph edges** — fixed relative import resolution (`.models` → `lemon.models`)
 - [ ] **Test coverage gate** — currently disabled in .kissconfig; add real tests to reach 90%
