@@ -199,10 +199,14 @@ def analyze_test_refs(
     """Full test reference analysis — matching test_refs.rs::analyze_test_refs."""
     definitions: list[CodeDefinition] = []
     test_refs: set[str] = set()
+    # Per-test-function references: (file, test_name) -> set of referenced names
+    test_func_refs: dict[CoveringTest, set[str]] = {}
 
     for pf in parsed_files:
         if _is_test_file_for_analysis(pf):
             collect_test_references(pf.tree.root_node, pf.source, test_refs)
+            # Also collect per-test-function references for coverage_map
+            _collect_per_test_refs(pf, test_func_refs)
         else:
             collect_definitions(pf.tree.root_node, pf.source, pf.path, definitions)
 
@@ -211,9 +215,15 @@ def analyze_test_refs(
     for d in definitions:
         name_files[d.name].add(d.file)
 
-    # Find unreferenced definitions
+    # Find unreferenced definitions and build coverage_map
     unreferenced: list[CodeDefinition] = []
+    coverage_map: dict[tuple[Path, str], list[CoveringTest]] = {}
+
     for d in definitions:
+        key = (d.file, d.name)
+        covering = _find_covering_tests(d, test_func_refs)
+        if covering:
+            coverage_map[key] = covering
         if not _is_covered(d, name_files, test_refs):
             unreferenced.append(d)
 
@@ -221,7 +231,66 @@ def analyze_test_refs(
         definitions=definitions,
         test_references=test_refs,
         unreferenced=unreferenced,
+        coverage_map=coverage_map,
     )
+
+
+def _collect_per_test_refs(pf: ParsedFile, out: dict) -> None:
+    """Collect references per test function within a test file."""
+    root = pf.tree.root_node
+    for child in _iter_children(root):
+        if child.type in _FUNC_KINDS:
+            _collect_func_test_ref(child, pf, out)
+        elif child.type in _CLASS_KINDS:
+            _collect_class_test_refs(child, pf, out)
+
+
+def _collect_func_test_ref(node, pf, out):
+    """Collect refs from a top-level test function."""
+    name_node = node.child_by_field_name("name")
+    if not name_node:
+        return
+    name = _node_text(name_node, pf.source)
+    if not (name.startswith("test_") or name.startswith("Test")):
+        return
+    refs: set[str] = set()
+    collect_test_references(node, pf.source, refs)
+    out[(pf.path, name)] = refs
+
+
+def _collect_class_test_refs(node, pf, out):
+    """Collect refs from test methods inside a test class."""
+    name_node = node.child_by_field_name("name")
+    cls_name = _node_text(name_node, pf.source) if name_node else ""
+    body = node.child_by_field_name("body")
+    if not body or not cls_name.startswith("Test"):
+        return
+    for method in _iter_children(body):
+        if method.type not in _FUNC_KINDS:
+            continue
+        mn = method.child_by_field_name("name")
+        if not mn:
+            continue
+        mname = _node_text(mn, pf.source)
+        if not mname.startswith("test_"):
+            continue
+        refs: set[str] = set()
+        collect_test_references(method, pf.source, refs)
+        out[(pf.path, f"{cls_name}.{mname}")] = refs
+
+
+def _find_covering_tests(
+    d: CodeDefinition,
+    test_func_refs: dict[CoveringTest, set[str]],
+) -> list[CoveringTest]:
+    """Find which test functions reference a given definition."""
+    covering = []
+    for test_key, refs in test_func_refs.items():
+        if d.name in refs:
+            covering.append(test_key)
+        elif d.containing_class and d.containing_class in refs:
+            covering.append(test_key)
+    return covering
 
 
 def _is_covered(d: CodeDefinition, name_files: dict[str, set[Path]],

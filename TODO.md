@@ -2,9 +2,9 @@
 
 ## Feature Gaps (vs Rust kiss)
 
-- [ ] **`mimic` command** — write generated .kissconfig to a file (`--out` option), not just stdout like `clamp`
-- [ ] **`viz --zoom`** — graph coarsening via Leiden community detection for large dependency graphs
-- [ ] **`show-tests` coverage map** — list *which specific test functions* cover each definition (not just tested/untested)
+- [x] **`mimic` command** — write generated .kissconfig to a file (`--out` option)
+- [x] **`viz --zoom`** — graph coarsening by path-prefix depth (0.0=packages, 1.0=full)
+- [x] **`show-tests` coverage map** — list *which specific test functions* cover each definition
 
 ## Performance
 

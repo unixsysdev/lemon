@@ -85,18 +85,45 @@ def percentile(sorted_values: list[int], p: float) -> int:
     return sorted_values[rank]
 
 
-def format_stats_table(summaries: list[tuple[str, list[int]]]) -> str:
-    """Format a stats table with percentile distributions.
+_METRIC_DISPLAY_NAMES: dict[str, str] = {
+    "statements_per_function": "Statements per function",
+    "arguments_per_function": "Arguments (total)",
+    "arguments_positional": "Arguments (positional)",
+    "arguments_keyword_only": "Arguments (keyword-only)",
+    "max_indentation_depth": "Max indentation depth",
+    "branches_per_function": "Branches per function",
+    "local_variables_per_function": "Local variables per function",
+    "returns_per_function": "Returns per function",
+    "nested_function_depth": "Nested function depth",
+    "boolean_parameters": "Boolean parameters",
+    "calls_per_function": "Calls per function",
+    "methods_per_class": "Methods per class",
+    "statements_per_file": "Statements per file",
+    "functions_per_file": "Functions per file",
+    "interface_types_per_file": "Interface types per file",
+    "concrete_types_per_file": "Concrete types per file",
+    "imported_names_per_file": "Imported names per file",
+    "fan_in": "Fan-in (per module)",
+    "fan_out": "Fan-out (per module)",
+    "transitive_deps": "Transitive deps (per module)",
+    "dependency_depth": "Dependency depth (per module)",
+}
 
-    Each entry in summaries is (metric_id, sorted_values).
-    """
-    header = f"{'metric_id':<40} {'N':>5} {'p50':>5} {'p90':>5} {'p95':>5} {'p99':>5} {'max':>5}"
+
+def format_stats_table(summaries: list[tuple[str, list[int]]]) -> str:
+    """Format a stats table with percentile distributions, matching kiss output."""
+    label_width = 38
+    header = (
+        f"{'Metric':<{label_width}}"
+        f"{'Count':>7}{'50%':>7}{'90%':>7}{'95%':>7}{'99%':>7}{'Max':>7}"
+    )
     separator = "-" * len(header)
-    lines = [header, separator]
+    lines = ["lemon stats - Summary Statistics", "", header, separator]
 
     for metric_id, values in summaries:
         if not values:
             continue
+        display = _METRIC_DISPLAY_NAMES.get(metric_id, metric_id)
         n = len(values)
         p50 = percentile(values, 50)
         p90 = percentile(values, 90)
@@ -104,7 +131,8 @@ def format_stats_table(summaries: list[tuple[str, list[int]]]) -> str:
         p99 = percentile(values, 99)
         mx = values[-1] if values else 0
         lines.append(
-            f"{metric_id:<40} {n:>5} {p50:>5} {p90:>5} {p95:>5} {p99:>5} {mx:>5}"
+            f"{display:<{label_width}}"
+            f"{n:>7}{p50:>7}{p90:>7}{p95:>7}{p99:>7}{mx:>7}"
         )
 
     return "\n".join(lines)
