@@ -53,15 +53,20 @@ class Config:
         return cls.for_language(Language.PYTHON)
 
     @classmethod
-    def load(cls, lang: Language, config_path: Optional[Path] = None) -> "Config":
+    def load(cls, lang: Language, config_path: Optional[Path] = None,
+             target_root: Optional[Path] = None) -> "Config":
         config = cls.for_language(lang)
-        # Chain: ~/.kissconfig -> ./.kissconfig -> explicit path
+        # Chain: ~/.kissconfig -> ./.kissconfig -> <target>/.kissconfig -> explicit path
         home = Path.home() / ".kissconfig"
         if home.is_file():
             config._merge_from_file(home, lang)
         local = Path(".kissconfig")
         if local.is_file():
             config._merge_from_file(local, lang)
+        if target_root:
+            target_cfg = Path(target_root) / ".kissconfig"
+            if target_cfg.is_file() and target_cfg.resolve() != local.resolve():
+                config._merge_from_file(target_cfg, lang)
         if config_path and config_path.is_file():
             config._merge_from_file(config_path, lang)
         return config
@@ -196,7 +201,8 @@ class GateConfig:
     orphan_module_enabled: bool = defaults.GATE["orphan_module_enabled"]
 
     @classmethod
-    def load(cls, config_path: Optional[Path] = None) -> "GateConfig":
+    def load(cls, config_path: Optional[Path] = None,
+             target_root: Optional[Path] = None) -> "GateConfig":
         config = cls()
         home = Path.home() / ".kissconfig"
         if home.is_file():
@@ -204,6 +210,10 @@ class GateConfig:
         local = Path(".kissconfig")
         if local.is_file():
             config._merge_from_file(local)
+        if target_root:
+            target_cfg = Path(target_root) / ".kissconfig"
+            if target_cfg.is_file() and target_cfg.resolve() != local.resolve():
+                config._merge_from_file(target_cfg)
         if config_path and config_path.is_file():
             config._merge_from_file(config_path)
         return config

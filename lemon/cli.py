@@ -31,9 +31,10 @@ def _progress(msg: str) -> None:
 def _load_configs(
     config_path: Path | None,
     lang_filter: Language | None,
+    target_root: Path | None = None,
 ) -> dict[Language, Config]:
     langs = [lang_filter] if lang_filter else list(Language)
-    return {lang: Config.load(lang, config_path) for lang in langs}
+    return {lang: Config.load(lang, config_path, target_root=target_root) for lang in langs}
 
 
 def _extract_chunks_for_duplication(parsed) -> list[CodeChunk]:
@@ -201,8 +202,8 @@ def check(path, focus, lang, check_all, ignore_prefixes, show_timing, config_pat
     cfg_path = Path(config_path) if config_path else None
     root, parsed = _discover_and_parse(path, ignore_prefixes, lang_filter, show_timing)
 
-    configs = _load_configs(cfg_path, lang_filter)
-    gate = GateConfig.load(cfg_path)
+    configs = _load_configs(cfg_path, lang_filter, target_root=root)
+    gate = GateConfig.load(cfg_path, target_root=root)
 
     stmts, units, violations = _run_metrics(parsed, configs, show_timing)
     graph, graph_viols = _run_graph(parsed, root, configs, show_timing)

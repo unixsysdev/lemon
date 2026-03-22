@@ -93,17 +93,51 @@ def _load_kissignore(root: Path) -> list[str]:
 
 
 def _matches_kissignore(rel_path: str, patterns: list[str]) -> bool:
-    """Simple gitignore-style pattern matching."""
+    """Gitignore-style pattern matching with glob support.
+
+    Supports:
+    - Exact directory prefixes: ``src/test`` matches ``src/test/foo.ts``
+    - Glob patterns: ``*.spec.ts`` matches any ``.spec.ts`` file
+    - Double-star patterns: ``**/generated/**`` matches any path with ``generated/``
+    - Filename-only patterns (no ``/``): matched against each path component and the basename
+    """
+    import fnmatch
+
+    # Normalize separators to /
+    rel_normalized = rel_path.replace(os.sep, "/")
+
     for pattern in patterns:
-        # Normalize pattern
         p = pattern.rstrip("/")
-        if rel_path.startswith(p + "/") or rel_path.startswith(p + os.sep):
+
+        # --- legacy prefix matching (directories) ---
+        if rel_normalized.startswith(p + "/") or rel_normalized == p:
             return True
-        if rel_path == p:
+
+        # --- double-star pattern: **/foo/** or **/foo ---
+        if "**" in p:
+            # Convert ** to match any path segments
+            # e.g. "**/generated/**" -> should match "src/app/generated/foo.ts"
+            regex_parts = p.split("**")
+            fnmatch_pattern = "*".join(regex_parts)
+            if fnmatch.fnmatch(rel_normalized, fnmatch_pattern):
+                return True
+            continue
+
+        # --- pattern with no directory separator: match against basename and components ---
+        if "/" not in p:
+            basename = rel_normalized.rsplit("/", 1)[-1] if "/" in rel_normalized else rel_normalized
+            if fnmatch.fnmatch(basename, p):
+                return True
+            # Also check each directory component
+            for component in rel_normalized.split("/"):
+                if fnmatch.fnmatch(component, p):
+                    return True
+            continue
+
+        # --- pattern with directory separator: match against full relative path ---
+        if fnmatch.fnmatch(rel_normalized, p):
             return True
-        # Simple glob: pattern ends with *
-        if p.endswith("*") and rel_path.startswith(p[:-1]):
-            return True
+
     return False
 
 
