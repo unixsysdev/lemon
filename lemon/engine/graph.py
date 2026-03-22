@@ -66,6 +66,25 @@ def _path_to_module(path: Path, root: Path, lang: Language) -> str:
 def _resolve_import(import_name: str, src_module: str,
                      known_modules: set[str]) -> str | None:
     """Resolve an import name to a known module."""
+    # Handle relative imports (.models, ..engine.graph)
+    if import_name.startswith("."):
+        stripped = import_name.lstrip(".")
+        dot_count = len(import_name) - len(stripped)
+        # .X from a.b.c => a.b.X  (drop last 1 = the module itself)
+        # ..X from a.b.c => a.X   (drop last 2)
+        src_parts = src_module.split(".")
+        up = min(dot_count, len(src_parts))
+        base_parts = src_parts[:-up] if up else src_parts
+        if stripped:
+            candidate = ".".join(base_parts + stripped.split("."))
+        else:
+            candidate = ".".join(base_parts)
+        if candidate in known_modules:
+            return candidate
+        # Also try without the package prefix (flat layout)
+        if stripped in known_modules:
+            return stripped
+
     # Exact match
     if import_name in known_modules:
         return import_name
@@ -95,22 +114,36 @@ _IMPORT_DISPATCH = {
     "namespace_use_declaration": "_extract_php_use",
 }
 
+_JS_TS_IMPORT_TYPES = {"import_statement"}
+
+
+def _get_import_handler(node_type, language):
+    """Get the handler name for an import node type."""
+    # Python and PHP use the dispatch table
+    handler = _IMPORT_DISPATCH.get(node_type)
+    if handler:
+        return handler
+    # JS/TS import_statement is the same node type as Python but different handler
+    if node_type == "import_statement" and language in (Language.JAVASCRIPT, Language.TYPESCRIPT):
+        return "_extract_js_import"
+    return None
+
 
 def extract_imports(parsed: ParsedFile) -> list[str]:
     """Extract import module names from a parsed file."""
     imports: list[str] = []
-    _walk_imports(parsed.tree.root_node, parsed.source, imports)
+    _walk_imports(parsed.tree.root_node, parsed.source, parsed.language, imports)
     return imports
 
 
-def _walk_imports(node, source, imports):
+def _walk_imports(node, source, language, imports):
     """Recursively walk AST collecting imports (flat — no deep nesting)."""
-    handler_name = _IMPORT_DISPATCH.get(node.type)
+    handler_name = _get_import_handler(node.type, language)
     if handler_name:
         globals()[handler_name](node, source, imports)
         return
     for child in _iter_node_children(node):
-        _walk_imports(child, source, imports)
+        _walk_imports(child, source, language, imports)
 
 
 from .ast_helpers import iter_children as _iter_node_children

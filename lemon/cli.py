@@ -289,10 +289,10 @@ _STATS_METRICS = [
 @click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript"]))
 @click.option("--ignore", "ignore_prefixes", multiple=True)
 @click.option("--config", "config_path", type=click.Path())
-@click.option("--all", "show_all", type=int, default=None, is_flag=False, flag_value=10,
-              help="Show top N outliers per metric (default: 10).")
+@click.option("--all", "show_all", is_flag=True, help="Show top 10 outliers per metric.")
+@click.option("--top", "top_n", type=int, default=None, help="Show top N outliers per metric.")
 @click.option("--table", "show_table", is_flag=True, help="Per-unit wide-format table.")
-def stats(path, lang, ignore_prefixes, config_path, show_all, show_table):
+def stats(path, lang, ignore_prefixes, config_path, show_all, top_n, show_table):
     """Show percentile distribution of metrics."""
     from .engine.discovery import find_source_files
     from .engine.metrics import compute_file_metrics
@@ -320,8 +320,10 @@ def stats(path, lang, ignore_prefixes, config_path, show_all, show_table):
 
     if show_table:
         _print_stats_table_wide(parsed, values)
-    elif show_all is not None:
-        _print_stats_top(values, show_all)
+    elif top_n is not None:
+        _print_stats_top(values, top_n)
+    elif show_all:
+        _print_stats_top(values, 10)
     else:
         summaries = [(k, sorted(values[k])) for k in _STATS_METRICS]
         print(format_stats_table(summaries))
