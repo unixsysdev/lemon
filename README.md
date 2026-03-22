@@ -73,12 +73,24 @@ Exit code 0 = clean, 1 = violations found.
 
 ### `lemon stats` — Metric Distribution
 
-Show percentile distribution (p50, p75, p90, p95, p99, max) for all metrics.
+Show percentile distribution (Count, p50, p90, p95, p99, Max) for all metrics including graph metrics (fan-in, fan-out, transitive deps, dependency depth).
 
 ```bash
 lemon stats .
-lemon stats --all=10 .        # Top 10 outliers per metric
+lemon stats --all .            # Top 10 outliers per metric
+lemon stats --top 5 .          # Top 5 outliers per metric
 lemon stats --table .          # Per-unit wide-format table
+```
+
+**Output format:**
+```
+lemon stats - Summary Statistics
+
+Metric                                  Count    50%    90%    95%    99%    Max
+--------------------------------------------------------------------------------
+Statements per function                   187      7     20     25     29     37
+Fan-in (per module)                        20      1      3      4     13     13
+Fan-out (per module)                       20      1      3      3     14     14
 ```
 
 ---
@@ -103,13 +115,17 @@ Generate a dependency graph visualization in Mermaid, DOT, or Markdown format.
 lemon viz graph.mmd .          # Mermaid flowchart
 lemon viz graph.dot .          # Graphviz DOT
 lemon viz graph.md .           # Markdown with embedded Mermaid
+lemon viz graph.mmd . --zoom 0.5  # Coarsened view (package-level)
+lemon viz graph.mmd . --zoom 0    # Maximally coarsened (top-level only)
 ```
+
+The `--zoom` option controls graph coarsening: `1.0` = full detail (default), `0.0` = top-level packages only.
 
 ---
 
 ### `lemon show-tests` — Test Coverage Map
 
-Show which definitions are covered by tests.
+Show which definitions are covered by tests, including which specific test functions cover each definition.
 
 ```bash
 lemon show-tests .
@@ -118,18 +134,31 @@ lemon show-tests . --untested  # Also show untested definitions
 
 **Output format:**
 ```
-TEST:path/to/module.py:my_function
+TESTED:path/to/module.py:my_function <- [test_my_function, test_integration]
+TESTED:path/to/module.py:other_function
 UNTESTED:path/to/module.py:42:orphan_function
 ```
 
 ---
 
-### `lemon clamp` — Generate Config
+### `lemon mimic` — Generate Config
 
-Generate a `.kissconfig` from current codebase stats (p95-clamped thresholds).
+Generate a `.kissconfig` from current codebase stats (p95-clamped thresholds). Can write directly to a file.
 
 ```bash
-lemon clamp . > .kissconfig
+lemon mimic .                  # Print to stdout
+lemon mimic . --out .kissconfig  # Write directly to file
+lemon mimic . --lang php --out .kissconfig  # Language-specific
+```
+
+---
+
+### `lemon clamp` — Quick Config
+
+Shortcut for `mimic . --out .kissconfig` — writes config directly.
+
+```bash
+lemon clamp .
 ```
 
 ---
@@ -219,8 +248,11 @@ lemon shrink check .     # Fails if statements increased
 Lemon reads `.kissconfig` files in TOML format, cascading in this order:
 
 1. `~/.kissconfig` (global defaults)
-2. `./.kissconfig` (project-level)
-3. `--config PATH` (explicit override)
+2. `./.kissconfig` (working directory)
+3. `<target>/.kissconfig` (analyzed project root — auto-discovered)
+4. `--config PATH` (explicit override)
+
+Lemon also supports `.kissignore` files in the target root with gitignore-style patterns (globs, `**`, basename-only matching) to exclude files from analysis.
 
 ### Example `.kissconfig`
 
@@ -258,7 +290,7 @@ lemon/
 └── engine/
     ├── ast_helpers.py   # Shared tree-sitter AST utilities
     ├── discovery.py     # File discovery + test file detection
-    ├── duplication.py   # SequenceMatcher-based duplication detection
+    ├── duplication.py   # MinHash/LSH duplication detection
     ├── graph.py         # Dependency graph (networkx DiGraph)
     ├── metrics.py       # All metric computation from AST nodes
     ├── parser.py        # Tree-sitter parsing (4 language grammars)
