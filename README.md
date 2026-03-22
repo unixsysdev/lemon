@@ -15,7 +15,8 @@ All languages receive **identical analysis depth** — the same 14 function-leve
 ## Installation
 
 ```bash
-cd kiss_py
+git clone git@github.com:unixsysdev/lemon.git
+cd lemon
 pip install -e .
 ```
 
