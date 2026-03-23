@@ -4,6 +4,7 @@
 [thresholds]
 annotations_per_function = 9
 arguments_positional = 8
+functions_per_file = 35
 
 [gate]
 test_coverage_threshold = 0

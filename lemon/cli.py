@@ -191,7 +191,7 @@ def _discover_and_parse(path, ignore_prefixes, lang_filter, show_timing):
 @main.command()
 @click.argument("path", default=".", type=click.Path(exists=True))
 @click.option("--focus", type=click.Path())
-@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript"]))
+@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript", "go"]))
 @click.option("--all", "check_all", is_flag=True)
 @click.option("--ignore", "ignore_prefixes", multiple=True)
 @click.option("--timing", "show_timing", is_flag=True)
@@ -287,7 +287,7 @@ _STATS_METRICS = [
 
 @main.command()
 @click.argument("path", default=".", type=click.Path(exists=True))
-@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript"]))
+@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript", "go"]))
 @click.option("--ignore", "ignore_prefixes", multiple=True)
 @click.option("--config", "config_path", type=click.Path())
 @click.option("--all", "show_all", is_flag=True, help="Show top 10 outliers per metric.")
@@ -440,7 +440,7 @@ def dry(path, filter_file, min_sim, min_lines, ignore_prefixes):
 
 @main.command()
 @click.argument("path", default=".", type=click.Path(exists=True))
-@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript"]))
+@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript", "go"]))
 @click.option("--ignore", "ignore_prefixes", multiple=True)
 @click.option("--out", "out_path", type=click.Path(), help="Write config to file instead of stdout.")
 def mimic(path, lang, ignore_prefixes, out_path):
@@ -498,7 +498,7 @@ def _generate_kissconfig(path, lang, ignore_prefixes):
 # ---------------------------------------------------------------------------
 
 @main.command()
-@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript"]))
+@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript", "go"]))
 @click.option("--defaults", "use_defaults", is_flag=True)
 @click.option("--config", "config_path", type=click.Path())
 def rules(lang, use_defaults, config_path):
@@ -615,7 +615,7 @@ def shrink_check(path, ignore_prefixes):
 @main.command()
 @click.argument("out", type=click.Path())
 @click.argument("path", default=".", type=click.Path(exists=True))
-@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript"]))
+@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript", "go"]))
 @click.option("--ignore", "ignore_prefixes", multiple=True)
 @click.option("--zoom", type=float, default=1.0,
               help="Zoom level 0.0-1.0 (0=coarsened packages, 1=full detail).")
@@ -640,7 +640,7 @@ def viz(out, path, lang, ignore_prefixes, zoom):
 
 @main.command("show-tests")
 @click.argument("path", default=".", type=click.Path(exists=True))
-@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript"]))
+@click.option("--lang", type=click.Choice(["python", "php", "javascript", "typescript", "go"]))
 @click.option("--untested", is_flag=True, help="Also show untested definitions.")
 @click.option("--ignore", "ignore_prefixes", multiple=True)
 def show_tests(path, lang, untested, ignore_prefixes):

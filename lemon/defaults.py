@@ -132,6 +132,37 @@ TYPESCRIPT = {
 
 
 # ---------------------------------------------------------------------------
+# Go defaults (tuned to Go idioms)
+# ---------------------------------------------------------------------------
+
+GO = {
+    "imported_names_per_file": 20,
+    "statements_per_file": 400,
+    "functions_per_file": 30,
+    "interface_types_per_file": 5,
+    "concrete_types_per_file": 10,
+    "statements_per_function": 35,
+    "arguments_per_function": 7,
+    "arguments_positional": NOT_APPLICABLE,      # Go has no keyword args
+    "arguments_keyword_only": NOT_APPLICABLE,
+    "max_indentation_depth": 4,
+    "branches_per_function": 10,
+    "local_variables_per_function": 20,
+    "methods_per_class": 20,
+    "returns_per_function": 5,
+    "return_values_per_function": 5,              # Go commonly returns (value, error)
+    "nested_function_depth": NOT_APPLICABLE,      # Go doesn't nest named functions
+    "statements_per_try_block": NOT_APPLICABLE,   # Go has no try/catch
+    "boolean_parameters": 2,
+    "annotations_per_function": NOT_APPLICABLE,    # Go has no decorators
+    "calls_per_function": 50,
+    "cycle_size": 3,
+    "indirect_dependencies": 100,
+    "dependency_depth": 7,
+}
+
+
+# ---------------------------------------------------------------------------
 # Graph defaults
 # ---------------------------------------------------------------------------
 
@@ -170,4 +201,5 @@ LANGUAGE_DEFAULTS: dict[str, dict] = {
     "php": PHP,
     "javascript": JAVASCRIPT,
     "typescript": TYPESCRIPT,
+    "go": GO,
 }

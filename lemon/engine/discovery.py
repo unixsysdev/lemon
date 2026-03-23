@@ -164,6 +164,11 @@ def is_test_file(path: Path) -> bool:
         if name.startswith("test_") or stem.endswith("_test"):
             return True
 
+    # Go test files
+    if ext == ".go":
+        if name.endswith("_test.go"):
+            return True
+
     return False
 
 

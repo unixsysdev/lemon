@@ -461,7 +461,7 @@ def compute_file_metrics(parsed: ParsedFile) -> FileMetrics:
     }
     _CLASS_KINDS = {"class_definition", "class_declaration"}
     _INTERFACE_KINDS = {"interface_declaration"}
-    _IMPORT_KINDS = {"import_statement", "import_from_statement", "namespace_use_declaration"}
+    _IMPORT_KINDS = {"import_statement", "import_from_statement", "namespace_use_declaration", "import_declaration"}
 
     def _walk_file(node):
         if node.type in _FUNC_KINDS:
@@ -475,6 +475,10 @@ def compute_file_metrics(parsed: ParsedFile) -> FileMetrics:
             return
         if node.type in _IMPORT_KINDS:
             counters["imports"] += _count_import_names(node, source, lang)
+            return
+        # Go type_declaration: contains type_spec with struct_type or interface_type
+        if node.type == "type_declaration":
+            _walk_go_type_decl(node, counters)
             return
         if node.type in _CLASS_KINDS:
             _walk_class_for_file(node, source, lang, counters, walk_fn=_walk_file)
@@ -490,6 +494,18 @@ def compute_file_metrics(parsed: ParsedFile) -> FileMetrics:
         imports=counters["imports"],
         functions=counters["funcs"],
     )
+
+
+def _walk_go_type_decl(node, counters):
+    """Classify a Go type_declaration as interface or concrete (struct)."""
+    for child in _node_children_iter(node):
+        if child.type != "type_spec":
+            continue
+        for tc in _node_children_iter(child):
+            if tc.type == "interface_type":
+                counters["iface"] += 1
+            elif tc.type == "struct_type":
+                counters["concrete"] += 1
 
 
 def _walk_class_for_file(node, source, lang, counters, *, walk_fn):

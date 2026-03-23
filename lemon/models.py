@@ -18,6 +18,7 @@ class Language(Enum):
     PHP = auto()
     JAVASCRIPT = auto()
     TYPESCRIPT = auto()
+    GO = auto()
 
     @staticmethod
     def from_path(path: Path) -> Optional["Language"]:
@@ -31,6 +32,7 @@ class Language(Enum):
             Language.PHP: ".php",
             Language.JAVASCRIPT: ".js",
             Language.TYPESCRIPT: ".ts",
+            Language.GO: ".go",
         }[self]
 
     @property
@@ -46,6 +48,7 @@ _EXT_MAP: dict[str, Language] = {
     ".mjs": Language.JAVASCRIPT,
     ".ts": Language.TYPESCRIPT,
     ".tsx": Language.TYPESCRIPT,
+    ".go": Language.GO,
 }
 
 

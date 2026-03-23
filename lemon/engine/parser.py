@@ -36,6 +36,9 @@ def _get_ts_language(lang: Language) -> tree_sitter.Language:
         elif lang == Language.TYPESCRIPT:
             import tree_sitter_typescript
             _LANGUAGES[lang] = tree_sitter.Language(tree_sitter_typescript.language_typescript())
+        elif lang == Language.GO:
+            import tree_sitter_go
+            _LANGUAGES[lang] = tree_sitter.Language(tree_sitter_go.language())
         else:
             raise ValueError(f"Unsupported language: {lang}")
     return _LANGUAGES[lang]
@@ -61,6 +64,7 @@ _LANG_TO_QUERY_FILE: dict[Language, str] = {
     Language.PHP: "php.scm",
     Language.JAVASCRIPT: "javascript.scm",
     Language.TYPESCRIPT: "typescript.scm",
+    Language.GO: "go.scm",
 }
 
 

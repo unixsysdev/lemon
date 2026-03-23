@@ -9,6 +9,7 @@
 | PHP | `.php` | tree-sitter-php |
 | JavaScript | `.js`, `.jsx`, `.mjs` | tree-sitter-javascript |
 | TypeScript | `.ts`, `.tsx` | tree-sitter-typescript |
+| Go | `.go` | tree-sitter-go |
 
 All languages receive **identical analysis depth** — the same 14 function-level metrics, 5 file-level metrics, 3 graph metrics, duplication detection, and test coverage analysis.
 
@@ -64,7 +65,7 @@ Options:
   ▸ Building dependency graph …
   ▸ Checking duplication …
   ▸ Analyzing test coverage …
-Analyzed: 1470 files, 7369 code_units, 29764 statements, 1470 graph_nodes, 0 graph_edges
+Analyzed: 1470 files, 7369 code_units, 29764 statements, 1470 graph_nodes, 842 graph_edges
 VIOLATION:statements_per_function:path/to/file.py:42:my_func: Function 'my_func' has 50 statements (threshold: 35) Break into smaller, focused functions.
 ```
 
@@ -294,16 +295,17 @@ lemon/
     ├── duplication.py   # MinHash/LSH duplication detection
     ├── graph.py         # Dependency graph (networkx DiGraph)
     ├── metrics.py       # All metric computation from AST nodes
-    ├── parser.py        # Tree-sitter parsing (4 language grammars)
+    ├── parser.py        # Tree-sitter parsing (5 language grammars)
     ├── shrink.py        # Constrained metric minimization
     ├── test_refs.py     # Static test reference coverage analysis
     ├── units.py         # Code unit extraction
-    ├── viz.py           # Mermaid/DOT graph visualization
+    ├── viz.py           # Mermaid/DOT graph visualization + coarsening
     └── queries/         # Tree-sitter SCM query files
         ├── python.scm
         ├── php.scm
         ├── javascript.scm
-        └── typescript.scm
+        ├── typescript.scm
+        └── go.scm
 ```
 
 ## Analysis Pipeline
@@ -319,6 +321,20 @@ Discovery → Parsing → Metrics → Graph → Duplication → Test Coverage �
 5. **Duplication** — extracts function/method bodies, computes pairwise similarity, clusters duplicates
 6. **Test Coverage** — identifies test files, collects referenced identifiers, checks definition coverage
 7. **Report** — formats and prints violations, summary, and gate failures
+
+## Adding a New Language
+
+Lemon is designed for easy language extension. Adding a new language requires ~70 lines of new code across 7 files:
+
+1. **`lemon/engine/queries/<lang>.scm`** — Tree-sitter queries for functions, classes, branches, returns, calls, imports, assignments
+2. **`lemon/models.py`** — Add enum value to `Language`, extension to `_EXT_MAP`
+3. **`lemon/engine/parser.py`** — Register `tree-sitter-<lang>` grammar and query file
+4. **`lemon/defaults.py`** — Add threshold defaults (copy from Python and tune)
+5. **`lemon/engine/graph.py`** — Add import extraction handler for the language's import syntax
+6. **`lemon/engine/discovery.py`** — Add test file naming convention
+7. **`lemon/cli.py`** — Add language name to Click choices
+
+The query file is the only substantial work. Everything else is mechanical registration.
 
 ## License
 

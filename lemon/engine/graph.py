@@ -126,6 +126,9 @@ def _get_import_handler(node_type, language):
     # JS/TS import_statement is the same node type as Python but different handler
     if node_type == "import_statement" and language in (Language.JAVASCRIPT, Language.TYPESCRIPT):
         return "_extract_js_import"
+    # Go import_declaration
+    if node_type == "import_declaration" and language == Language.GO:
+        return "_extract_go_import"
     return None
 
 
@@ -179,6 +182,29 @@ def _extract_js_import(node, source: str, imports: list[str]) -> None:
     if source_node:
         txt = _node_text(source_node, source).strip("'\"")
         imports.append(txt)
+
+
+def _extract_go_import(node, source: str, imports: list[str]) -> None:
+    """Extract Go import paths from import_declaration."""
+    for child in _iter_node_children(node):
+        if child.type == "import_spec":
+            _add_go_import_path(child, source, imports)
+        elif child.type == "import_spec_list":
+            _extract_go_import_list(child, source, imports)
+
+
+def _extract_go_import_list(node, source, imports):
+    """Extract paths from a Go import_spec_list."""
+    for spec in _iter_node_children(node):
+        if spec.type == "import_spec":
+            _add_go_import_path(spec, source, imports)
+
+
+def _add_go_import_path(spec_node, source, imports):
+    """Extract path from a single Go import_spec node."""
+    path_node = spec_node.child_by_field_name("path")
+    if path_node:
+        imports.append(_node_text(path_node, source).strip('"'))
 
 
 # ---------------------------------------------------------------------------
